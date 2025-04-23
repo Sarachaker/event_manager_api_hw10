@@ -1,6 +1,6 @@
 from builtins import str
-import pytest
 import uuid
+import pytest
 from pydantic import ValidationError
 from datetime import datetime
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
