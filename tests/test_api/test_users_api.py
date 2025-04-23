@@ -189,3 +189,70 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_update_only_bio(async_client: AsyncClient, admin_user, admin_token):
+    payload = {"bio": "Just updated my bio."}
+    r = await async_client.put(
+        f"/users/{admin_user.id}",
+        json=payload,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["bio"] == payload["bio"]
+    # profile_picture_url unchanged
+    assert data["profile_picture_url"] == admin_user.profile_picture_url
+
+@pytest.mark.asyncio
+async def test_update_only_profile_picture(async_client: AsyncClient, admin_user, admin_token):
+    new_pic = "https://cdn.example.com/avatar.png"
+    payload = {"profile_picture_url": new_pic}
+    r = await async_client.put(
+        f"/users/{admin_user.id}",
+        json=payload,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["profile_picture_url"] == new_pic
+    # bio unchanged
+    assert data["bio"] == admin_user.bio
+
+@pytest.mark.asyncio
+async def test_update_bio_and_picture(async_client: AsyncClient, admin_user, admin_token):
+    payload = {
+        "bio": "New bio + new pic",
+        "profile_picture_url": "https://cdn.example.com/newpic.jpg"
+    }
+    r = await async_client.put(
+        f"/users/{admin_user.id}",
+        json=payload,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["bio"] == payload["bio"]
+    assert data["profile_picture_url"] == payload["profile_picture_url"]
+
+@pytest.mark.asyncio
+async def test_invalid_profile_picture_extension(async_client: AsyncClient, admin_user, admin_token):
+    # `.pdf` is not allowed
+    payload = {"profile_picture_url": "https://cdn.example.com/resume.pdf"}
+    r = await async_client.put(
+        f"/users/{admin_user.id}",
+        json=payload,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert r.status_code == 422
+    assert "Profile picture URL must end with" in r.text
+
+@pytest.mark.asyncio
+async def test_empty_update_payload(async_client: AsyncClient, admin_user, admin_token):
+    r = await async_client.put(
+        f"/users/{admin_user.id}",
+        json={},  # nothing to update
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert r.status_code == 422
+    assert "At least one field must be provided" in r.text
