@@ -45,6 +45,22 @@ engine = create_async_engine(TEST_DATABASE_URL, echo=settings.debug)
 AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
+@pytest.fixture
+def async_client():
+     client = TestClient(app)
+     return client
+
+@pytest.fixture
+def user_token():
+     return create_access_token(data={"sub": "john_doe", "role": UserRole.AUTHENTICATED.value})
+
+@pytest.fixture
+def admin_token():
+     return create_access_token(data={"sub": "admin_member", "role": UserRole.ADMIN.value}) 
+
+@pytest.fixture
+def manager_token():
+     return create_access_token(data={"sub": "manager_chris", "role": UserRole.MANAGER.value})
 
 @pytest.fixture
 def email_service():
@@ -52,7 +68,6 @@ def email_service():
     template_manager = TemplateManager()
     email_service = EmailService(template_manager=template_manager)
     return email_service
-
 
 # this is what creates the http client for your api tests
 @pytest.fixture(scope="function")
@@ -165,10 +180,10 @@ async def users_with_same_role_50_users(db_session):
     users = []
     for _ in range(50):
         user_data = {
-            "nickname": fake.user_name(),
+            "nickname": fake.unique.user_name(),
             "first_name": fake.first_name(),
             "last_name": fake.last_name(),
-            "email": fake.email(),
+            "email": fake.unique.email(),
             "hashed_password": fake.password(),
             "role": UserRole.AUTHENTICATED,
             "email_verified": False,
@@ -178,6 +193,7 @@ async def users_with_same_role_50_users(db_session):
         db_session.add(user)
         users.append(user)
     await db_session.commit()
+    fake.unique.clear()
     return users
 
 @pytest.fixture
