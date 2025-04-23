@@ -37,7 +37,8 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., example="Secure*1234")
-validator('password')
+    
+    @validator('password')
     def validate_password_strength(cls, password: str) -> str:
         if len(password) < 8:
             raise ValueError("Password must be at least 8 characters long.")
