@@ -61,7 +61,7 @@ class UserUpdate(UserBase):
             raise ValueError("At least one field must be provided for update")
         return values
  
-@validator("profile_picture_url")
+    @validator("profile_picture_url")
     def validate_picture_extension(cls, url):
         if url is None:
             return url
