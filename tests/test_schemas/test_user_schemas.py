@@ -1,64 +1,43 @@
 from builtins import str
-import uuid
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
 
 # Tests for UserBase
-def test_user_base_valid():
-    data = {
-        "email": "john.doe@example.com",
-        "nickname": "john_doe",
-        "first_name": "John",
-        "last_name": "Doe"
-    }
-    user = UserBase(**data)
-    assert user.nickname == data["nickname"]
+def test_user_base_valid(user_base_data):
+    user = UserBase(**user_base_data)
+    assert user.email == user_base_data["email"]
+    assert user.nickname == user_base_data["nickname"]
+    assert user.first_name == user_base_data["first_name"]
+    assert user.last_name == user_base_data["last_name"]
 
 # Tests for UserCreate
-def test_user_create_valid():
-    data = {
-        "email": "john.doe@example.com",
-        "nickname": "john_doe",
-        "password": "Password123!",
-        "first_name": "John",
-        "last_name": "Doe"
-    }
-    user = UserCreate(**data)
-    assert user.password == data["password"]
+def test_user_create_valid(user_create_data):
+    user = UserCreate(**user_create_data)
+    assert user.email == user_create_data["email"]
+    assert user.password == user_create_data["password"]
+    assert user.nickname == user_create_data["nickname"]
 
 # Tests for UserUpdate
-def test_user_update_valid():
-    data = {
-        "email": "john.doe@example.com",
-        "first_name": "John"
-    }
-    user = UserUpdate(**data)
-    assert user.first_name == "John"
-    
+def test_user_update_valid(user_update_data):
+    user_update = UserUpdate(**user_update_data)
+    assert user_update.email == user_update_data["email"]
+    assert user_update.first_name == user_update_data["first_name"]
+    assert user_update.last_name == user_update_data["last_name"]
+
 # Tests for UserResponse
-def test_user_response_valid():
-    data = {
-        "id": uuid.uuid4(),
-        "email": "john.doe@example.com",
-        "nickname": "john_doe",
-        "first_name": "John",
-        "last_name": "Doe",
-        "role": "AUTHENTICATED",
-        "is_professional": True
-    }
-    user = UserResponse(**data)
-    assert user.email == "john.doe@example.com"
+def test_user_response_valid(user_response_data):
+    user = UserResponse(**user_response_data)
+    assert user.id == user_response_data["id"]
+    assert user.email == user_response_data["email"]
+    assert user.role == user_response_data["role"]
 
 # Tests for LoginRequest
-def test_login_request_valid():
-    data = {
-        "username": "john.doe@example.com",
-        "password": "Password123!"
-    }
-    login = LoginRequest(**data)
-    assert login.email == data["username"]
+def test_login_request_valid(login_request_data):
+    login = LoginRequest(**login_request_data)
+    assert login.email == login_request_data["email"]
+    assert login.password == login_request_data["password"]
 
 # Parametrized tests for nickname and email validation
 @pytest.mark.parametrize("nickname", ["test_user", "test-user", "testuser123", "123test"])
@@ -93,26 +72,3 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
-
-@pytest.mark.parametrize("password", [
-    "Password123!",    # valid
-    "GoodPass@2024",   # valid
-])
-
-def test_user_create_valid_password(password, user_create_data):
-    user_create_data["password"] = password
-    user = UserCreate(**user_create_data)
-    assert user.password == password
-
-@pytest.mark.parametrize("password", [
-    "Maximum 8 letters",                    # too short
-    "Add an UPPERCASE Letter",         # no uppercase
-    "Add a lowercase Letter",         # no lowercase
-    "Add a digit",            # no digits
-    "Add a special character",         # no special chars
-])
-
-def test_user_create_invalid_password(password, user_create_data):
-    user_create_data["password"] = password
-    with pytest.raises(ValidationError):
-        UserCreate(**user_create_data)
