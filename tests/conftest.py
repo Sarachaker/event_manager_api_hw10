@@ -48,7 +48,7 @@ AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 @pytest.fixture
 def email_service():
     # Assuming the TemplateManager does not need any arguments for initialization
-        with patch('smtplib.SMTP') as mock_smtp:
+    with patch('smtplib.SMTP') as mock_smtp:
         # Create a mock SMTP instance
         mock_smtp_instance = mock_smtp.return_value
         mock_smtp_instance.__enter__.return_value = mock_smtp_instance
