@@ -16,7 +16,7 @@ Fixtures:
 # Standard library imports
 from builtins import range
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from uuid import uuid4
 
 # Third-party imports
@@ -46,28 +46,21 @@ AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_c
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
 @pytest.fixture
-def async_client():
-     client = TestClient(app)
-     return client
-
-@pytest.fixture
-def user_token():
-     return create_access_token(data={"sub": "john_doe", "role": UserRole.AUTHENTICATED.value})
-
-@pytest.fixture
-def admin_token():
-     return create_access_token(data={"sub": "admin_member", "role": UserRole.ADMIN.value}) 
-
-@pytest.fixture
-def manager_token():
-     return create_access_token(data={"sub": "manager_chris", "role": UserRole.MANAGER.value})
-
-@pytest.fixture
 def email_service():
     # Assuming the TemplateManager does not need any arguments for initialization
-    template_manager = TemplateManager()
-    email_service = EmailService(template_manager=template_manager)
-    return email_service
+        with patch('smtplib.SMTP') as mock_smtp:
+        # Create a mock SMTP instance
+        mock_smtp_instance = mock_smtp.return_value
+        mock_smtp_instance.__enter__.return_value = mock_smtp_instance
+        mock_smtp_instance.__exit__.return_value = None
+        mock_smtp_instance.starttls.return_value = None
+        mock_smtp_instance.login.return_value = None
+        mock_smtp_instance.sendmail.return_value = None
+
+        # Create the email service
+        template_manager = TemplateManager()
+        service = EmailService(template_manager)
+        yield service
 
 # this is what creates the http client for your api tests
 @pytest.fixture(scope="function")
@@ -178,13 +171,13 @@ async def unverified_user(db_session):
 @pytest.fixture(scope="function")
 async def users_with_same_role_50_users(db_session):
     users = []
-    for _ in range(50):
+    for i in range(50):
         user_data = {
-            "nickname": fake.unique.user_name(),
+            "nickname": f"test_user_{i}",
             "first_name": fake.first_name(),
             "last_name": fake.last_name(),
-            "email": fake.unique.email(),
-            "hashed_password": fake.password(),
+            "email": f"test_user_{i}@example.com",,
+            "hashed_password": hash_password("MySuperPassword$1234"),,
             "role": UserRole.AUTHENTICATED,
             "email_verified": False,
             "is_locked": False,
@@ -193,7 +186,6 @@ async def users_with_same_role_50_users(db_session):
         db_session.add(user)
         users.append(user)
     await db_session.commit()
-    fake.unique.clear()
     return users
 
 @pytest.fixture
@@ -241,39 +233,71 @@ def user_base_data():
 @pytest.fixture
 def user_base_data_invalid():
     return {
-        "username": "john_doe_123",
-        "email": "john.doe.example.com",
-        "full_name": "John Doe",
-        "bio": "I am a software engineer with over 5 years of experience.",
-        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
+        "email": "test@example.com",
+        "nickname": "test_user",
+        "first_name": "Test",
+        "last_name": "User",
+        "bio": "Test bio",
+        "profile_picture_url": "https://example.com/profile.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/test",
+        "github_profile_url": "https://github.com/test"
     }
 
 
 @pytest.fixture
 def user_create_data(user_base_data):
-    return {**user_base_data, "password": "SecurePassword123!"}
+    return {**user_base_data, "password": "TestPassword123!"}
 
 @pytest.fixture
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
-        "bio": "I specialize in backend development with Python and Node.js.",
-        "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
+        "updated@example.com",
+        "first_name": "Updated",
+        "last_name": "User",
+        "bio": "Updated bio"
     }
 
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
-        "username": "testuser",
+        "id": uuid4(),
         "email": "test@example.com",
-        "last_login_at": datetime.now(),
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-        "links": []
+        "nickname": "test_user",
+        "first_name": "Test",
+        "last_name": "User",
+        "bio": "Test bio",
+        "profile_picture_url": "https://example.com/profile.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/test",
+        "github_profile_url": "https://github.com/test",
+        "role": "AUTHENTICATED",
+        "is_professional": False
     }
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {
+         "email": "test@example.com",
+         "password": "TestPassword123!"
+    }
+
+@pytest.fixture
+async def admin_token(admin_user):
+    return create_access_token(
+        data={"sub": str(admin_user.id), "role": "ADMIN"},
+        expires_delta=None
+    )
+
+@pytest.fixture
+async def manager_token(manager_user):
+    return create_access_token(
+        data={"sub": str(manager_user.id), "role": "MANAGER"},
+        expires_delta=None
+    )
+
+@pytest.fixture
+async def user_token(verified_user):
+    return create_access_token(
+        data={"sub": str(verified_user.id), "role": "AUTHENTICATED"},
+        expires_delta=None
+    )
