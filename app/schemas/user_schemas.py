@@ -27,7 +27,7 @@ class UserBase(BaseModel):
     nickname: Optional[str] = Field(default_factory=generate_nickname, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
     first_name: Optional[str] = Field(default=None, example="John")
     last_name: Optional[str] = Field(default=None, example="Doe")
-    bio: Optional[str] = Field(default=None, example="Experienced software developer specializing in web applications.")
+    bio: Optional[str] = Field(default=None, example="specializing in web applications.")
     profile_picture_url: Optional[str] = Field(default=None, example="https://example.com/profiles/john.jpg")
     linkedin_profile_url: Optional[str] = Field(default=None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(default=None, example="https://github.com/johndoe")
@@ -75,7 +75,7 @@ class UserResponse(UserBase):
     is_professional: Optional[bool] = Field(default=False, example=True)
 
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(...,alias='username', example="john.doe@example.com")
+    email: EmailStr = Field(...,alias="username", example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
 
 class ErrorResponse(BaseModel):
