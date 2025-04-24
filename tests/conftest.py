@@ -45,9 +45,9 @@ engine = create_async_engine(TEST_DATABASE_URL, echo=settings.debug)
 AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
+
 @pytest.fixture
 def email_service():
-    # Assuming the TemplateManager does not need any arguments for initialization
     with patch('smtplib.SMTP') as mock_smtp:
         # Create a mock SMTP instance
         mock_smtp_instance = mock_smtp.return_value
@@ -56,11 +56,12 @@ def email_service():
         mock_smtp_instance.starttls.return_value = None
         mock_smtp_instance.login.return_value = None
         mock_smtp_instance.sendmail.return_value = None
-
+        
         # Create the email service
         template_manager = TemplateManager()
         service = EmailService(template_manager)
         yield service
+
 
 # this is what creates the http client for your api tests
 @pytest.fixture(scope="function")
@@ -176,8 +177,8 @@ async def users_with_same_role_50_users(db_session):
             "nickname": f"test_user_{i}",
             "first_name": fake.first_name(),
             "last_name": fake.last_name(),
-            "email": f"test_user_{i}@example.com",,
-            "hashed_password": hash_password("MySuperPassword$1234"),,
+            "email": f"test_user_{i}@example.com",
+            "hashed_password": hash_password("MySuperPassword$1234"),
             "role": UserRole.AUTHENTICATED,
             "email_verified": False,
             "is_locked": False,
@@ -223,16 +224,6 @@ async def manager_user(db_session: AsyncSession):
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
-        "email": "john.doe@example.com",
-        "full_name": "John Doe",
-        "bio": "I am a software engineer with over 5 years of experience.",
-        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
-    }
-
-@pytest.fixture
-def user_base_data_invalid():
-    return {
         "email": "test@example.com",
         "nickname": "test_user",
         "first_name": "Test",
@@ -243,16 +234,28 @@ def user_base_data_invalid():
         "github_profile_url": "https://github.com/test"
     }
 
+@pytest.fixture
+def user_base_data_invalid():
+    return {
+        "username": "john_doe_123",
+        "email": "john.doe.example.com",
+        "full_name": "John Doe",
+        "bio": "I am a software engineer with over 5 years of experience.",
+        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
+    }
+
 
 @pytest.fixture
 def user_create_data(user_base_data):
-    return {**user_base_data, "password": "TestPassword123!"}
+    return {
+        **user_base_data,
+        "password": "TestPassword123!"
+    }
 
 @pytest.fixture
 def user_update_data():
     return {
-        "email": "john.doe.new@example.com",
-        "updated@example.com",
+        "email": "updated@example.com",
         "first_name": "Updated",
         "last_name": "User",
         "bio": "Updated bio"
@@ -277,8 +280,8 @@ def user_response_data():
 @pytest.fixture
 def login_request_data():
     return {
-         "email": "test@example.com",
-         "password": "TestPassword123!"
+        "email": "test@example.com",
+        "password": "TestPassword123!"
     }
 
 @pytest.fixture
