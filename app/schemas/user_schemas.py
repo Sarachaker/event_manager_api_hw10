@@ -33,7 +33,8 @@ class UserBase(BaseModel):
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
-class Config: from_attributes = True
+class Config: 
+    from_attributes = True
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
@@ -77,7 +78,7 @@ class UserUpdate(UserBase):
         return values
 
 class UserResponse(UserBase):
-    id: uuid.UUID = Field(..., example=str(uuid.uuid4()))
+    id: uuid.UUID = Field(..., example=uuid.uuid4())
     role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
     email: EmailStr = Field(..., example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())    
@@ -85,7 +86,7 @@ class UserResponse(UserBase):
     is_professional: Optional[bool] = Field(default=False, example=True)
 
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(..., example="john.doe@example.com")
+    email: str = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
 
 class ErrorResponse(BaseModel):
@@ -93,7 +94,14 @@ class ErrorResponse(BaseModel):
     details: Optional[str] = Field(None, example="The requested resource was not found.")
 
 class UserListResponse(BaseModel):
-    items: List[UserResponse] = Field(..., example=[])
+    items: List[UserResponse] = Field(..., example=[{
+        "id": uuid.uuid4(), "nickname": generate_nickname(), "email": "john.doe@example.com",
+        "first_name": "John", "bio": "Experienced developer", "role": "AUTHENTICATED",
+        "last_name": "Doe", "bio": "Experienced developer", "role": "AUTHENTICATED",
+        "profile_picture_url": "https://example.com/profiles/john.jpg", 
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe", 
+        "github_profile_url": "https://github.com/johndoe"
+    }])
     total: int = Field(..., example=100)
     page: int = Field(..., example=1)
     size: int = Field(..., example=10)
